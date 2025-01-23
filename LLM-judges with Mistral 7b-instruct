@@ -1,0 +1,886 @@
+{
+ "cells": [
+  {
+   "cell_type": "markdown",
+   "id": "dd185456",
+   "metadata": {
+    "papermill": {
+     "duration": 0.003413,
+     "end_time": "2025-01-23T05:45:05.563324",
+     "exception": false,
+     "start_time": "2025-01-23T05:45:05.559911",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "source": [
+    "# LLMs - You Can't Please Them All\n",
+    "#### Are LLM-judges robust to adversarial inputs?\n",
+    "![](https://www.deepchecks.com/wp-content/uploads/2024/08/img-llm-as-judge.jpg)\n",
+    "\n",
+    "[Kaggle competition](https://www.kaggle.com/competitions/llms-you-cant-please-them-all/overview)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "id": "f1c440fb",
+   "metadata": {
+    "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
+    "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
+    "execution": {
+     "iopub.execute_input": "2025-01-23T05:45:05.570987Z",
+     "iopub.status.busy": "2025-01-23T05:45:05.570545Z",
+     "iopub.status.idle": "2025-01-23T05:45:18.454926Z",
+     "shell.execute_reply": "2025-01-23T05:45:18.453630Z"
+    },
+    "papermill": {
+     "duration": 12.890525,
+     "end_time": "2025-01-23T05:45:18.457135",
+     "exception": false,
+     "start_time": "2025-01-23T05:45:05.566610",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "/kaggle/input/llms-you-cant-please-them-all/sample_submission.csv\n",
+      "/kaggle/input/llms-you-cant-please-them-all/test.csv\n",
+      "/kaggle/input/words-en/words2.txt\n",
+      "/kaggle/input/words-en/words1.txt\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/config.json\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/pytorch_model-00002-of-00002.bin\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/tokenizer.json\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/tokenizer_config.json\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/pytorch_model.bin.index.json\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/pytorch_model-00001-of-00002.bin\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/special_tokens_map.json\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/.gitattributes\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/tokenizer.model\n",
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/generation_config.json\n"
+     ]
+    }
+   ],
+   "source": [
+    "import numpy as np # linear algebra\n",
+    "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
+    "import torch\n",
+    "from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig\n",
+    "\n",
+    "import os\n",
+    "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
+    "    for filename in filenames:\n",
+    "        print(os.path.join(dirname, filename))\n",
+    "\n",
+    "# Set the display option to show all columns without truncation\n",
+    "pd.set_option('display.max_colwidth', None) \n",
+    "\n",
+    "# Ignore all warnings\n",
+    "import warnings \n",
+    "warnings.filterwarnings('ignore') "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "id": "a0c57a74",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T05:45:18.464936Z",
+     "iopub.status.busy": "2025-01-23T05:45:18.464383Z",
+     "iopub.status.idle": "2025-01-23T05:45:38.979641Z",
+     "shell.execute_reply": "2025-01-23T05:45:38.978547Z"
+    },
+    "papermill": {
+     "duration": 20.521178,
+     "end_time": "2025-01-23T05:45:38.981678",
+     "exception": false,
+     "start_time": "2025-01-23T05:45:18.460500",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "application/vnd.jupyter.widget-view+json": {
+       "model_id": "9094e730e4f9419188968de2cc7304a5",
+       "version_major": 2,
+       "version_minor": 0
+      },
+      "text/plain": [
+       "Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]"
+      ]
+     },
+     "metadata": {},
+     "output_type": "display_data"
+    }
+   ],
+   "source": [
+    "model_path = \"/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1\"\n",
+    "tokenizer = AutoTokenizer.from_pretrained(model_path)\n",
+    "\n",
+    "model = AutoModelForCausalLM.from_pretrained(\n",
+    "    model_path,\n",
+    "    torch_dtype = torch.bfloat16,\n",
+    "    device_map = \"auto\",\n",
+    "    trust_remote_code = True\n",
+    ")\n",
+    "\n",
+    "if tokenizer.pad_token is None:\n",
+    "    tokenizer.pad_token = tokenizer.eos_token\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "id": "d6a2027d",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T05:45:38.990173Z",
+     "iopub.status.busy": "2025-01-23T05:45:38.989479Z",
+     "iopub.status.idle": "2025-01-23T05:45:38.995507Z",
+     "shell.execute_reply": "2025-01-23T05:45:38.994583Z"
+    },
+    "papermill": {
+     "duration": 0.011834,
+     "end_time": "2025-01-23T05:45:38.997145",
+     "exception": false,
+     "start_time": "2025-01-23T05:45:38.985311",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "def mistral_response(prompt):\n",
+    "    \"\"\"Generates a response from the Mistral model and returns only the answer.\n",
+    "\n",
+    "    Args:\n",
+    "        prompt: The input prompt for the model.\n",
+    "\n",
+    "    Returns:\n",
+    "        str: The generated response from the model.\n",
+    "    \"\"\"\n",
+    "\n",
+    "    def create_mistral_instruction_prompt(prompt):\n",
+    "        return f\"[INST] {prompt} [/INST]\"\n",
+    "\n",
+    "    mistral_instruction_prompt = create_mistral_instruction_prompt(prompt)\n",
+    "        \n",
+    "    inputs = tokenizer(mistral_instruction_prompt, return_tensors=\"pt\").to(model.device)\n",
+    "\n",
+    "    outputs = model.generate(\n",
+    "        **inputs,\n",
+    "        max_length=256, \n",
+    "        temperature=0.7, \n",
+    "        top_p=0.9, \n",
+    "        num_return_sequences=1\n",
+    "    )\n",
+    "    \n",
+    "    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=False) \n",
+    "    mistral_instruction_prompt = '<s> '+ mistral_instruction_prompt\n",
+    "    formatted_generated_text = generated_text.replace(mistral_instruction_prompt, \"\").strip()\n",
+    "\n",
+    "    return formatted_generated_text"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "id": "2bb06cec",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T05:45:39.005091Z",
+     "iopub.status.busy": "2025-01-23T05:45:39.004687Z",
+     "iopub.status.idle": "2025-01-23T06:14:33.040509Z",
+     "shell.execute_reply": "2025-01-23T06:14:33.039059Z"
+    },
+    "papermill": {
+     "duration": 1734.051881,
+     "end_time": "2025-01-23T06:14:33.052427",
+     "exception": false,
+     "start_time": "2025-01-23T05:45:39.000546",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Certainly! Guatemala is a beautiful country with a rich culture and many interesting places to visit. Here are three cities that you may want to consider adding to your itinerary:\n",
+      "\n",
+      "1. Guatemala City: Guatemala City is the capital of Guatemala and the largest city in Central America. It is a bustling metropolis with a mix of modern and colonial architecture, as well as a vibrant cultural scene. Some popular attractions in the city include the National Palace, the Metropolitan Cathedral, and the Museum of Modern Art.\n",
+      "2. Antigua: Antigua is a charming colonial town located in the central highlands of Guatemala. It is known for its well-preserved architecture, beautiful parks and plazas, and lively nightlife. Some popular attractions in Antigua include the La Santisima Trinidad Church, the Central Market, and the Ruins of St. John's.\n",
+      "3. Tikal: Tikal is an ancient Mayan city located in the northern part of Guatemala. It is one of the largest and most well-\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Example usage\n",
+    "prompt = \"CAN you tell us 3 cities to visit in Guatemala?\"\n",
+    "response = mistral_response(prompt)\n",
+    "print(response)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "8d423d6a",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T06:14:33.064378Z",
+     "iopub.status.busy": "2025-01-23T06:14:33.063975Z",
+     "iopub.status.idle": "2025-01-23T06:14:33.189547Z",
+     "shell.execute_reply": "2025-01-23T06:14:33.188461Z"
+    },
+    "papermill": {
+     "duration": 0.132443,
+     "end_time": "2025-01-23T06:14:33.191451",
+     "exception": false,
+     "start_time": "2025-01-23T06:14:33.059008",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "test_df = pd.read_csv('/kaggle/input/llms-you-cant-please-them-all/test.csv')\n",
+    "submission_df = pd.read_csv('/kaggle/input/llms-you-cant-please-them-all/sample_submission.csv')\n",
+    "\n",
+    "with open(\"/kaggle/input/words-en/words1.txt\", \"r\") as f:\n",
+    "    words1 = [word.strip() for word in f.readlines()]\n",
+    "\n",
+    "with open(\"/kaggle/input/words-en/words2.txt\", \"r\") as f:\n",
+    "    words2 = [word.strip() for word in f.readlines()]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "id": "b0b4ea32",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T06:14:33.199478Z",
+     "iopub.status.busy": "2025-01-23T06:14:33.199169Z",
+     "iopub.status.idle": "2025-01-23T07:39:00.322904Z",
+     "shell.execute_reply": "2025-01-23T07:39:00.321843Z"
+    },
+    "papermill": {
+     "duration": 5067.131383,
+     "end_time": "2025-01-23T07:39:00.326421",
+     "exception": false,
+     "start_time": "2025-01-23T06:14:33.195038",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n",
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n",
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n"
+     ]
+    }
+   ],
+   "source": [
+    "essays = []\n",
+    "\n",
+    "for i,row in test_df.iterrows():\n",
+    "    input_text = f\"Write an essay on the topic {row['topic']}\"\n",
+    "    output_text = mistral_response(input_text)\n",
+    "    essays.append(output_text)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "id": "44550bb2",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T07:39:00.346657Z",
+     "iopub.status.busy": "2025-01-23T07:39:00.346305Z",
+     "iopub.status.idle": "2025-01-23T07:39:00.417715Z",
+     "shell.execute_reply": "2025-01-23T07:39:00.416895Z"
+    },
+    "papermill": {
+     "duration": 0.079474,
+     "end_time": "2025-01-23T07:39:00.420832",
+     "exception": false,
+     "start_time": "2025-01-23T07:39:00.341358",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/html": [
+       "<div>\n",
+       "<style scoped>\n",
+       "    .dataframe tbody tr th:only-of-type {\n",
+       "        vertical-align: middle;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe tbody tr th {\n",
+       "        vertical-align: top;\n",
+       "    }\n",
+       "\n",
+       "    .dataframe thead th {\n",
+       "        text-align: right;\n",
+       "    }\n",
+       "</style>\n",
+       "<table border=\"1\" class=\"dataframe\">\n",
+       "  <thead>\n",
+       "    <tr style=\"text-align: right;\">\n",
+       "      <th></th>\n",
+       "      <th>id</th>\n",
+       "      <th>essay</th>\n",
+       "    </tr>\n",
+       "  </thead>\n",
+       "  <tbody>\n",
+       "    <tr>\n",
+       "      <th>0</th>\n",
+       "      <td>1097671</td>\n",
+       "      <td>Self-reliance and adaptability are two essential qualities in healthcare. While self-reliance refers to an individual's ability to take care of their health needs independently, adaptability refers to the ability to adjust to changes in healthcare systems, technologies, and treatments. Both qualities are crucial in ensuring that individuals receive the best possible care.\\n\\nSelf-reliance is important in healthcare because it empowers individuals to take control of their health. By being self-reliant, individuals can make informed decisions about their health, such as when to seek medical attention, what treatments to pursue, and how to manage their conditions. This can lead to better health outcomes and a greater sense of control over one's life.\\n\\nOn the other hand, adaptability is important in healthcare because it allows healthcare providers to respond to changes in the healthcare system. With the rapid advancements in technology and medicine, healthcare providers must be able to adapt to new treatments, technologies, and protocols. This requires a flexible and adaptable mindset, as well as the ability to learn and incorporate new</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>1</th>\n",
+       "      <td>1726150</td>\n",
+       "      <td>Management consulting has been a popular tool for organizations seeking to address conflicts within marketing. The effectiveness of management consulting in this area can be evaluated by examining its ability to identify and resolve conflicts, improve communication and collaboration, and enhance overall marketing performance.\\n\\nOne of the key benefits of management consulting is its ability to identify and resolve conflicts within marketing. Management consultants are trained to identify potential conflicts and work with marketing teams to develop strategies to address them. This can involve facilitating communication and collaboration between team members, identifying areas of disagreement, and developing solutions that meet the needs of all parties involved.\\n\\nIn addition to resolving conflicts, management consulting can also improve communication and collaboration within marketing teams. By bringing in an outside perspective, management consultants can help to break down silos and encourage team members to work together more effectively. This can involve facilitating team-building activities, providing training on effective communication and collaboration skills, and helping to establish clear roles and responsibilities within the team.\\n\\nFinally, management consulting can enhance overall marketing performance by helping organizations to develop and implement effective marketing strategies. Management consultants can provide</td>\n",
+       "    </tr>\n",
+       "    <tr>\n",
+       "      <th>2</th>\n",
+       "      <td>3211968</td>\n",
+       "      <td>Self-reliance is a crucial trait for achieving success in software engineering. It refers to the ability of an individual to rely on their own skills, knowledge, and resources to accomplish a task or achieve a goal. In the field of software engineering, self-reliance is essential for several reasons.\\n\\nFirstly, software engineering is a complex and dynamic field that requires constant learning and adaptation. New technologies, programming languages, and tools are constantly emerging, and it is the responsibility of software engineers to keep up with these changes. Self-reliance allows software engineers to take the initiative to learn new skills and stay up-to-date with the latest developments in their field. This not only helps them to remain competitive but also enables them to contribute more effectively to their teams and organizations.\\n\\nSecondly, software engineering projects often require individuals to work independently or in small teams. Self-reliance allows software engineers to take ownership of their work and manage their own tasks effectively. This includes setting goals, prioritizing tasks, and managing deadlines. Self-reliant software engineers are</td>\n",
+       "    </tr>\n",
+       "  </tbody>\n",
+       "</table>\n",
+       "</div>"
+      ],
+      "text/plain": [
+       "        id  \\\n",
+       "0  1097671   \n",
+       "1  1726150   \n",
+       "2  3211968   \n",
+       "\n",
+       "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            essay  \n",
+       "0                                                                                                                                                                                                                                                                                                               Self-reliance and adaptability are two essential qualities in healthcare. While self-reliance refers to an individual's ability to take care of their health needs independently, adaptability refers to the ability to adjust to changes in healthcare systems, technologies, and treatments. Both qualities are crucial in ensuring that individuals receive the best possible care.\\n\\nSelf-reliance is important in healthcare because it empowers individuals to take control of their health. By being self-reliant, individuals can make informed decisions about their health, such as when to seek medical attention, what treatments to pursue, and how to manage their conditions. This can lead to better health outcomes and a greater sense of control over one's life.\\n\\nOn the other hand, adaptability is important in healthcare because it allows healthcare providers to respond to changes in the healthcare system. With the rapid advancements in technology and medicine, healthcare providers must be able to adapt to new treatments, technologies, and protocols. This requires a flexible and adaptable mindset, as well as the ability to learn and incorporate new  \n",
+       "1  Management consulting has been a popular tool for organizations seeking to address conflicts within marketing. The effectiveness of management consulting in this area can be evaluated by examining its ability to identify and resolve conflicts, improve communication and collaboration, and enhance overall marketing performance.\\n\\nOne of the key benefits of management consulting is its ability to identify and resolve conflicts within marketing. Management consultants are trained to identify potential conflicts and work with marketing teams to develop strategies to address them. This can involve facilitating communication and collaboration between team members, identifying areas of disagreement, and developing solutions that meet the needs of all parties involved.\\n\\nIn addition to resolving conflicts, management consulting can also improve communication and collaboration within marketing teams. By bringing in an outside perspective, management consultants can help to break down silos and encourage team members to work together more effectively. This can involve facilitating team-building activities, providing training on effective communication and collaboration skills, and helping to establish clear roles and responsibilities within the team.\\n\\nFinally, management consulting can enhance overall marketing performance by helping organizations to develop and implement effective marketing strategies. Management consultants can provide  \n",
+       "2                                                                                                                                                                                                                                                                                Self-reliance is a crucial trait for achieving success in software engineering. It refers to the ability of an individual to rely on their own skills, knowledge, and resources to accomplish a task or achieve a goal. In the field of software engineering, self-reliance is essential for several reasons.\\n\\nFirstly, software engineering is a complex and dynamic field that requires constant learning and adaptation. New technologies, programming languages, and tools are constantly emerging, and it is the responsibility of software engineers to keep up with these changes. Self-reliance allows software engineers to take the initiative to learn new skills and stay up-to-date with the latest developments in their field. This not only helps them to remain competitive but also enables them to contribute more effectively to their teams and organizations.\\n\\nSecondly, software engineering projects often require individuals to work independently or in small teams. Self-reliance allows software engineers to take ownership of their work and manage their own tasks effectively. This includes setting goals, prioritizing tasks, and managing deadlines. Self-reliant software engineers are  "
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "submission_df['essay'] = essays\n",
+    "submission_df"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "id": "82e12abc",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-23T07:39:00.430316Z",
+     "iopub.status.busy": "2025-01-23T07:39:00.429997Z",
+     "iopub.status.idle": "2025-01-23T07:39:00.447938Z",
+     "shell.execute_reply": "2025-01-23T07:39:00.446906Z"
+    },
+    "papermill": {
+     "duration": 0.024903,
+     "end_time": "2025-01-23T07:39:00.449720",
+     "exception": false,
+     "start_time": "2025-01-23T07:39:00.424817",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": [
+    "submission_df.to_csv('submission.csv', index=False)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e6d7acc1",
+   "metadata": {
+    "papermill": {
+     "duration": 0.003333,
+     "end_time": "2025-01-23T07:39:00.457015",
+     "exception": false,
+     "start_time": "2025-01-23T07:39:00.453682",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "294db9b2",
+   "metadata": {
+    "papermill": {
+     "duration": 0.003228,
+     "end_time": "2025-01-23T07:39:00.463789",
+     "exception": false,
+     "start_time": "2025-01-23T07:39:00.460561",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kaggle": {
+   "accelerator": "none",
+   "dataSources": [
+    {
+     "databundleVersionId": 10369658,
+     "sourceId": 83035,
+     "sourceType": "competition"
+    },
+    {
+     "datasetId": 6517370,
+     "sourceId": 10531938,
+     "sourceType": "datasetVersion"
+    },
+    {
+     "modelId": 1902,
+     "modelInstanceId": 3900,
+     "sourceId": 5112,
+     "sourceType": "modelInstanceVersion"
+    }
+   ],
+   "dockerImageVersionId": 30839,
+   "isGpuEnabled": false,
+   "isInternetEnabled": false,
+   "language": "python",
+   "sourceType": "notebook"
+  },
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.12"
+  },
+  "papermill": {
+   "default_parameters": {},
+   "duration": 6840.394355,
+   "end_time": "2025-01-23T07:39:03.231172",
+   "environment_variables": {},
+   "exception": null,
+   "input_path": "__notebook__.ipynb",
+   "output_path": "__notebook__.ipynb",
+   "parameters": {},
+   "start_time": "2025-01-23T05:45:02.836817",
+   "version": "2.6.0"
+  },
+  "widgets": {
+   "application/vnd.jupyter.widget-state+json": {
+    "state": {
+     "1cbecf9bf28542778dd7a0fb359be48a": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "ProgressStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "ProgressStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "bar_color": null,
+       "description_width": ""
+      }
+     },
+     "40ac196465ba466ea05c1f72e56bb67d": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "703c8ded07b74390b5be3022101f717c": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "9094e730e4f9419188968de2cc7304a5": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HBoxModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HBoxModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HBoxView",
+       "box_style": "",
+       "children": [
+        "IPY_MODEL_df883742825d4f6aa506ec7894ef1f3f",
+        "IPY_MODEL_aa962f2b02fb4fd8b37dd9dc13df5205",
+        "IPY_MODEL_d33d9890a06f4725923628b24594a87e"
+       ],
+       "layout": "IPY_MODEL_e2bbcafbff94445084aa61ccfbfae32c",
+       "tabbable": null,
+       "tooltip": null
+      }
+     },
+     "aa962f2b02fb4fd8b37dd9dc13df5205": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "FloatProgressModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "FloatProgressModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "ProgressView",
+       "bar_style": "success",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_dd5d4ea77ae4498bbb943502a8a423a8",
+       "max": 2.0,
+       "min": 0.0,
+       "orientation": "horizontal",
+       "style": "IPY_MODEL_1cbecf9bf28542778dd7a0fb359be48a",
+       "tabbable": null,
+       "tooltip": null,
+       "value": 2.0
+      }
+     },
+     "d2ddb02560014e038f438b1f434abcd8": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
+      }
+     },
+     "d33d9890a06f4725923628b24594a87e": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_703c8ded07b74390b5be3022101f717c",
+       "placeholder": "​",
+       "style": "IPY_MODEL_d739a9410e7e47aea8aff746733c74bd",
+       "tabbable": null,
+       "tooltip": null,
+       "value": " 2/2 [00:04&lt;00:00,  2.13s/it]"
+      }
+     },
+     "d739a9410e7e47aea8aff746733c74bd": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
+      }
+     },
+     "dd5d4ea77ae4498bbb943502a8a423a8": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "df883742825d4f6aa506ec7894ef1f3f": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_40ac196465ba466ea05c1f72e56bb67d",
+       "placeholder": "​",
+       "style": "IPY_MODEL_d2ddb02560014e038f438b1f434abcd8",
+       "tabbable": null,
+       "tooltip": null,
+       "value": "Loading checkpoint shards: 100%"
+      }
+     },
+     "e2bbcafbff94445084aa61ccfbfae32c": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     }
+    },
+    "version_major": 2,
+    "version_minor": 0
+   }
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
