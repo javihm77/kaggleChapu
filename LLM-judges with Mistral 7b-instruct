@@ -2,13 +2,13 @@
  "cells": [
   {
    "cell_type": "markdown",
-   "id": "dd185456",
+   "id": "bf6f84fd",
    "metadata": {
     "papermill": {
-     "duration": 0.003413,
-     "end_time": "2025-01-23T05:45:05.563324",
+     "duration": 0.003135,
+     "end_time": "2025-01-29T01:37:37.115288",
      "exception": false,
-     "start_time": "2025-01-23T05:45:05.559911",
+     "start_time": "2025-01-29T01:37:37.112153",
      "status": "completed"
     },
     "tags": []
@@ -24,21 +24,21 @@
   {
    "cell_type": "code",
    "execution_count": 1,
-   "id": "f1c440fb",
+   "id": "c60e60a5",
    "metadata": {
     "_cell_guid": "b1076dfc-b9ad-4769-8c92-a6c4dae69d19",
     "_uuid": "8f2839f25d086af736a60e9eeb907d3b93b6e0e5",
     "execution": {
-     "iopub.execute_input": "2025-01-23T05:45:05.570987Z",
-     "iopub.status.busy": "2025-01-23T05:45:05.570545Z",
-     "iopub.status.idle": "2025-01-23T05:45:18.454926Z",
-     "shell.execute_reply": "2025-01-23T05:45:18.453630Z"
+     "iopub.execute_input": "2025-01-29T01:37:37.121791Z",
+     "iopub.status.busy": "2025-01-29T01:37:37.121476Z",
+     "iopub.status.idle": "2025-01-29T01:37:48.390838Z",
+     "shell.execute_reply": "2025-01-29T01:37:48.389678Z"
     },
     "papermill": {
-     "duration": 12.890525,
-     "end_time": "2025-01-23T05:45:18.457135",
+     "duration": 11.274293,
+     "end_time": "2025-01-29T01:37:48.392413",
      "exception": false,
-     "start_time": "2025-01-23T05:45:05.566610",
+     "start_time": "2025-01-29T01:37:37.118120",
      "status": "completed"
     },
     "tags": []
@@ -48,10 +48,6 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "/kaggle/input/llms-you-cant-please-them-all/sample_submission.csv\n",
-      "/kaggle/input/llms-you-cant-please-them-all/test.csv\n",
-      "/kaggle/input/words-en/words2.txt\n",
-      "/kaggle/input/words-en/words1.txt\n",
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/config.json\n",
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/pytorch_model-00002-of-00002.bin\n",
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/tokenizer.json\n",
@@ -61,7 +57,11 @@
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/special_tokens_map.json\n",
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/.gitattributes\n",
       "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/tokenizer.model\n",
-      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/generation_config.json\n"
+      "/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1/generation_config.json\n",
+      "/kaggle/input/llms-you-cant-please-them-all/sample_submission.csv\n",
+      "/kaggle/input/llms-you-cant-please-them-all/test.csv\n",
+      "/kaggle/input/words-en/words2.txt\n",
+      "/kaggle/input/words-en/words1.txt\n"
      ]
     }
    ],
@@ -69,7 +69,7 @@
     "import numpy as np # linear algebra\n",
     "import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n",
     "import torch\n",
-    "from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig\n",
+    "from transformers import AutoTokenizer, AutoModelForCausalLM, GenerationConfig, BitsAndBytesConfig\n",
     "\n",
     "import os\n",
     "for dirname, _, filenames in os.walk('/kaggle/input'):\n",
@@ -87,19 +87,19 @@
   {
    "cell_type": "code",
    "execution_count": 2,
-   "id": "a0c57a74",
+   "id": "5f2a6b74",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T05:45:18.464936Z",
-     "iopub.status.busy": "2025-01-23T05:45:18.464383Z",
-     "iopub.status.idle": "2025-01-23T05:45:38.979641Z",
-     "shell.execute_reply": "2025-01-23T05:45:38.978547Z"
+     "iopub.execute_input": "2025-01-29T01:37:48.399111Z",
+     "iopub.status.busy": "2025-01-29T01:37:48.398692Z",
+     "iopub.status.idle": "2025-01-29T01:39:10.829689Z",
+     "shell.execute_reply": "2025-01-29T01:39:10.828925Z"
     },
     "papermill": {
-     "duration": 20.521178,
-     "end_time": "2025-01-23T05:45:38.981678",
+     "duration": 82.435969,
+     "end_time": "2025-01-29T01:39:10.831496",
      "exception": false,
-     "start_time": "2025-01-23T05:45:18.460500",
+     "start_time": "2025-01-29T01:37:48.395527",
      "status": "completed"
     },
     "tags": []
@@ -108,7 +108,7 @@
     {
      "data": {
       "application/vnd.jupyter.widget-view+json": {
-       "model_id": "9094e730e4f9419188968de2cc7304a5",
+       "model_id": "ae8e97a20e6549f6a03dd8b1c10683f0",
        "version_major": 2,
        "version_minor": 0
       },
@@ -121,90 +121,153 @@
     }
    ],
    "source": [
+    "# Define the model path\n",
     "model_path = \"/kaggle/input/mistral/pytorch/7b-instruct-v0.1-hf/1\"\n",
+    "\n",
+    "# Load the tokenizer\n",
     "tokenizer = AutoTokenizer.from_pretrained(model_path)\n",
     "\n",
+    "# Load the model with half-precision (FP16) for optimization\n",
     "model = AutoModelForCausalLM.from_pretrained(\n",
     "    model_path,\n",
-    "    torch_dtype = torch.bfloat16,\n",
-    "    device_map = \"auto\",\n",
-    "    trust_remote_code = True\n",
-    ")\n",
-    "\n",
-    "if tokenizer.pad_token is None:\n",
-    "    tokenizer.pad_token = tokenizer.eos_token\n"
+    "    torch_dtype=torch.float16,  # Use FP16 for optimization\n",
+    "    device_map=\"auto\",         # Automatically map to available devices\n",
+    "    low_cpu_mem_usage=True      # Reduce CPU memory usage\n",
+    ")"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 3,
-   "id": "d6a2027d",
+   "id": "695355a3",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T05:45:38.990173Z",
-     "iopub.status.busy": "2025-01-23T05:45:38.989479Z",
-     "iopub.status.idle": "2025-01-23T05:45:38.995507Z",
-     "shell.execute_reply": "2025-01-23T05:45:38.994583Z"
+     "iopub.execute_input": "2025-01-29T01:39:10.839204Z",
+     "iopub.status.busy": "2025-01-29T01:39:10.838619Z",
+     "iopub.status.idle": "2025-01-29T01:39:10.845277Z",
+     "shell.execute_reply": "2025-01-29T01:39:10.844506Z"
     },
     "papermill": {
-     "duration": 0.011834,
-     "end_time": "2025-01-23T05:45:38.997145",
+     "duration": 0.011767,
+     "end_time": "2025-01-29T01:39:10.846624",
      "exception": false,
-     "start_time": "2025-01-23T05:45:38.985311",
+     "start_time": "2025-01-29T01:39:10.834857",
      "status": "completed"
     },
     "tags": []
    },
    "outputs": [],
    "source": [
-    "def mistral_response(prompt):\n",
-    "    \"\"\"Generates a response from the Mistral model and returns only the answer.\n",
+    "# Function to generate a prompt and get the model's response\n",
+    "def generate_response(prompt, max_new_tokens=250):\n",
+    "    # Encode the prompt\n",
+    "    inputs = tokenizer(prompt, return_tensors=\"pt\")\n",
+    "    prompt_token_count = inputs[\"input_ids\"].shape[1]\n",
+    "    print(f\"Prompt token count: {prompt_token_count}\")\n",
     "\n",
-    "    Args:\n",
-    "        prompt: The input prompt for the model.\n",
+    "    # Move inputs to the same device as the model\n",
+    "    inputs = {key: value.to(model.device) for key, value in inputs.items()}\n",
     "\n",
-    "    Returns:\n",
-    "        str: The generated response from the model.\n",
-    "    \"\"\"\n",
+    "    # Generate the response\n",
+    "    with torch.no_grad():\n",
+    "        outputs = model.generate(\n",
+    "            **inputs,\n",
+    "            max_new_tokens=max_new_tokens,\n",
+    "            num_return_sequences=1,\n",
+    "            do_sample=True,\n",
+    "            top_p=0.95,\n",
+    "            top_k=60,\n",
+    "            temperature=0.2,\n",
+    "            eos_token_id=tokenizer.eos_token_id,  # Ensure the model stops at the end of sequence token\n",
+    "            pad_token_id=tokenizer.pad_token_id,  # Ensure padding tokens are handled correctly\n",
+    "            repetition_penalty=1.2,  # Penalize repetition to encourage more diverse output\n",
+    "            early_stopping=True  # Ensure the model stops generating when max_new_tokens is reached\n",
+    "        )\n",
     "\n",
-    "    def create_mistral_instruction_prompt(prompt):\n",
-    "        return f\"[INST] {prompt} [/INST]\"\n",
+    "    # Decode the response\n",
+    "    response = tokenizer.decode(outputs[0], skip_special_tokens=True)\n",
+    "    response_token_count = len(tokenizer.encode(response))\n",
+    "    print(f\"Response token count: {response_token_count}\")\n",
     "\n",
-    "    mistral_instruction_prompt = create_mistral_instruction_prompt(prompt)\n",
-    "        \n",
-    "    inputs = tokenizer(mistral_instruction_prompt, return_tensors=\"pt\").to(model.device)\n",
+    "    # Debug: Print the full response before trimming\n",
+    "    #print(\"Full response before trimming:\", response)\n",
     "\n",
-    "    outputs = model.generate(\n",
-    "        **inputs,\n",
-    "        max_length=256, \n",
-    "        temperature=0.7, \n",
-    "        top_p=0.9, \n",
-    "        num_return_sequences=1\n",
-    "    )\n",
-    "    \n",
-    "    generated_text = tokenizer.decode(outputs[0], skip_special_tokens=False) \n",
-    "    mistral_instruction_prompt = '<s> '+ mistral_instruction_prompt\n",
-    "    formatted_generated_text = generated_text.replace(mistral_instruction_prompt, \"\").strip()\n",
+    "    # Remove the input prompt from the response\n",
+    "    response = response[len(prompt):].strip()\n",
+    "    print(\"\\n---\\n Trimmed response:\", response)\n",
     "\n",
-    "    return formatted_generated_text"
+    "    return response"
    ]
   },
   {
    "cell_type": "code",
    "execution_count": 4,
-   "id": "2bb06cec",
+   "id": "1bafd447",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T05:45:39.005091Z",
-     "iopub.status.busy": "2025-01-23T05:45:39.004687Z",
-     "iopub.status.idle": "2025-01-23T06:14:33.040509Z",
-     "shell.execute_reply": "2025-01-23T06:14:33.039059Z"
+     "iopub.execute_input": "2025-01-29T01:39:10.853654Z",
+     "iopub.status.busy": "2025-01-29T01:39:10.853377Z",
+     "iopub.status.idle": "2025-01-29T01:39:10.862686Z",
+     "shell.execute_reply": "2025-01-29T01:39:10.861668Z"
     },
     "papermill": {
-     "duration": 1734.051881,
-     "end_time": "2025-01-23T06:14:33.052427",
+     "duration": 0.014302,
+     "end_time": "2025-01-29T01:39:10.864062",
      "exception": false,
-     "start_time": "2025-01-23T05:45:39.000546",
+     "start_time": "2025-01-29T01:39:10.849760",
+     "status": "completed"
+    },
+    "tags": []
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "<s>[INST] User: Write a 100 word essay on the provided topic that intentionally challenges and provokes divergent interpretations, the essay will be qualified by three different LLM judges. Your essay should aim to maximize horizontal variance (disagreement between judges) while minimizing vertical variance (consistency across scores from a single judge). Focus on using language, tone, or arguments that could lead some judges to view your essay as high-quality (e.g., well-structured, creative, or thought-provoking) while others might score it lower due to perceived bias, ambiguity, or unconventional reasoning. Avoid repetition and ensure the essay is in English. [/INST]  Topic: Why should we visit Guatemala? </s>\n",
+      "\n",
+      " Prompt token count: 165\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Example usage\n",
+    "\n",
+    "instructions = \"<s>[INST] User: Write a 100 word essay on the provided topic that intentionally challenges and provokes divergent interpretations, \" \\\n",
+    "    \"the essay will be qualified by three different LLM judges. Your essay should aim to maximize horizontal variance (disagreement between judges) while minimizing \" \\\n",
+    "    \"vertical variance (consistency across scores from a single judge). Focus on using language, tone, or arguments that could lead some \" \\\n",
+    "    \"judges to view your essay as high-quality (e.g., well-structured, creative, or thought-provoking) while others might score it lower \" \\\n",
+    "    \"due to perceived bias, ambiguity, or unconventional reasoning. Avoid repetition and ensure the essay is in English. [/INST] \"\n",
+    "\n",
+    "topic = \"Topic: Why should we visit Guatemala?\"\n",
+    "\n",
+    "systems = f\"{topic} </s>\"\n",
+    "\n",
+    "prompt = f\"{instructions} {systems}\"\n",
+    "print(prompt)\n",
+    "\n",
+    "# Tokenize the prompt to check its length\n",
+    "input_ids = tokenizer(prompt, return_tensors=\"pt\")[\"input_ids\"]\n",
+    "prompt_token_count = input_ids.shape[1]\n",
+    "print(f\"\\n Prompt token count: {prompt_token_count}\")"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "id": "fa4274a0",
+   "metadata": {
+    "execution": {
+     "iopub.execute_input": "2025-01-29T01:39:10.871251Z",
+     "iopub.status.busy": "2025-01-29T01:39:10.870977Z",
+     "iopub.status.idle": "2025-01-29T01:39:24.765762Z",
+     "shell.execute_reply": "2025-01-29T01:39:24.764803Z"
+    },
+    "papermill": {
+     "duration": 13.900043,
+     "end_time": "2025-01-29T01:39:24.767389",
+     "exception": false,
+     "start_time": "2025-01-29T01:39:10.867346",
      "status": "completed"
     },
     "tags": []
@@ -221,37 +284,39 @@
      "name": "stdout",
      "output_type": "stream",
      "text": [
-      "Certainly! Guatemala is a beautiful country with a rich culture and many interesting places to visit. Here are three cities that you may want to consider adding to your itinerary:\n",
+      "Prompt token count: 165\n",
+      "Response token count: 413\n",
       "\n",
-      "1. Guatemala City: Guatemala City is the capital of Guatemala and the largest city in Central America. It is a bustling metropolis with a mix of modern and colonial architecture, as well as a vibrant cultural scene. Some popular attractions in the city include the National Palace, the Metropolitan Cathedral, and the Museum of Modern Art.\n",
-      "2. Antigua: Antigua is a charming colonial town located in the central highlands of Guatemala. It is known for its well-preserved architecture, beautiful parks and plazas, and lively nightlife. Some popular attractions in Antigua include the La Santisima Trinidad Church, the Central Market, and the Ruins of St. John's.\n",
-      "3. Tikal: Tikal is an ancient Mayan city located in the northern part of Guatemala. It is one of the largest and most well-\n"
+      "---\n",
+      " Trimmed response: 1: I believe that visiting Guatemala is essential for anyone who wants to experience a unique culture and history. The country has a rich indigenous heritage, stunning landscapes, and delicious cuisine. Additionally, Guatemala offers opportunities for adventure activities such as hiking, zip lining, and volcano trekking. Overall, the diverse experiences available in Guatemala make it an ideal destination for travelers seeking something new and exciting.\n",
+      "\n",
+      "Judge 2: While Guatemala does have its cultural and natural attractions, I think there are better destinations out there for those looking for adventure. For example, Costa Rica offers more extensive wildlife viewing opportunities, while Peru has Machu Picchu and other ancient ruins. Furthermore, Guatemala's political instability and safety concerns may deter many potential visitors. In my opinion, there are safer and more enjoyable options for travelers seeking adventure and cultural immersion.\n",
+      "\n",
+      "Judge 3: As someone who has lived in Guatemala for several years, I can attest to the country's beauty and charm. However, I also recognize that there are valid reasons why people might not want to visit. For\n"
      ]
     }
    ],
    "source": [
-    "# Example usage\n",
-    "prompt = \"CAN you tell us 3 cities to visit in Guatemala?\"\n",
-    "response = mistral_response(prompt)\n",
-    "print(response)"
+    "response = generate_response(prompt)\n",
+    "#print(response)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 5,
-   "id": "8d423d6a",
+   "execution_count": 6,
+   "id": "fc9de9e6",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T06:14:33.064378Z",
-     "iopub.status.busy": "2025-01-23T06:14:33.063975Z",
-     "iopub.status.idle": "2025-01-23T06:14:33.189547Z",
-     "shell.execute_reply": "2025-01-23T06:14:33.188461Z"
+     "iopub.execute_input": "2025-01-29T01:39:24.774595Z",
+     "iopub.status.busy": "2025-01-29T01:39:24.774334Z",
+     "iopub.status.idle": "2025-01-29T01:39:24.813346Z",
+     "shell.execute_reply": "2025-01-29T01:39:24.812458Z"
     },
     "papermill": {
-     "duration": 0.132443,
-     "end_time": "2025-01-23T06:14:33.191451",
+     "duration": 0.044326,
+     "end_time": "2025-01-29T01:39:24.814900",
      "exception": false,
-     "start_time": "2025-01-23T06:14:33.059008",
+     "start_time": "2025-01-29T01:39:24.770574",
      "status": "completed"
     },
     "tags": []
@@ -270,20 +335,20 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 6,
-   "id": "b0b4ea32",
+   "execution_count": 7,
+   "id": "aae7d975",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T06:14:33.199478Z",
-     "iopub.status.busy": "2025-01-23T06:14:33.199169Z",
-     "iopub.status.idle": "2025-01-23T07:39:00.322904Z",
-     "shell.execute_reply": "2025-01-23T07:39:00.321843Z"
+     "iopub.execute_input": "2025-01-29T01:39:24.822194Z",
+     "iopub.status.busy": "2025-01-29T01:39:24.821905Z",
+     "iopub.status.idle": "2025-01-29T01:39:57.456342Z",
+     "shell.execute_reply": "2025-01-29T01:39:57.455293Z"
     },
     "papermill": {
-     "duration": 5067.131383,
-     "end_time": "2025-01-23T07:39:00.326421",
+     "duration": 32.641523,
+     "end_time": "2025-01-29T01:39:57.459795",
      "exception": false,
-     "start_time": "2025-01-23T06:14:33.195038",
+     "start_time": "2025-01-29T01:39:24.818272",
      "status": "completed"
     },
     "tags": []
@@ -293,9 +358,58 @@
      "name": "stderr",
      "output_type": "stream",
      "text": [
-      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n",
-      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n",
       "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Prompt token count: 173\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Response token count: 421\n",
+      "\n",
+      "---\n",
+      " Trimmed response: reliance and adaptability are two essential qualities for individuals to thrive in any aspect of life, including healthcare. While self-reliance emphasizes an individual's ability to take charge of their health, adaptability highlights one's capacity to adjust to changing circumstances. Both traits have unique significance in healthcare, but they can also create tension when viewed through different lenses.\r\n",
+      "\r\n",
+      "On one hand, self-reliance promotes personal responsibility and autonomy, which are critical components of patient care. Patients who take control of their health outcomes tend to experience better outcomes than those who rely solely on medical professionals. Self-reliant patients often seek out information about their condition, engage with their doctors, and follow treatment plans diligently. This level of engagement can help reduce healthcare costs and improve overall quality of life.\r\n",
+      "\r\n",
+      "However, excessive reliance on oneself can sometimes hinder progress. For example, patients may overlook symptoms or fail to adhere to prescribed medication if they believe they can manage their condition without professional intervention. In such cases, adaptability becomes crucial. Adaptable patients recognize when they need assistance and are willing to seek help from medical professionals. They\n",
+      "Prompt token count: 169\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "Setting `pad_token_id` to `eos_token_id`:2 for open-end generation.\n"
+     ]
+    },
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Response token count: 363\n",
+      "\n",
+      "---\n",
+      " Trimmed response: ement consulting has been widely used in various industries for decades. However, its effectiveness in resolving conflicts within marketing remains debatable. On one hand, consultants can bring fresh perspectives and innovative solutions to complex problems. They can also help companies identify their strengths and weaknesses, which can aid them in making informed decisions. Additionally, they have access to extensive knowledge and expertise in marketing strategies, which can provide valuable insights into how to resolve conflicts effectively. On the other hand, consultants may not always understand the nuances of marketing conflicts, leading to misguided recommendations. Moreover, their lack of familiarity with the company's culture and history can hinder their ability to develop effective solutions. Ultimately, the effectiveness of management consulting in addressing conflicts within marketing depends on several factors, including the consultant's experience, approach, and understanding of the industry. Therefore, it is crucial to carefully evaluate these factors before engaging a consultant to address conflicts within marketing.\n",
+      "Prompt token count: 173\n",
+      "Response token count: 345\n",
+      "\n",
+      "---\n",
+      " Trimmed response: reliance has been widely recognized as an essential trait for individuals seeking success in any field, including software engineering. However, this notion can be interpreted differently depending on one's perspective. Some may argue that self-reliance is crucial for innovation and creativity, allowing developers to think outside the box and come up with unique solutions to complex problems. On the other hand, others may contend that relying too much on oneself can hinder progress, leading to missed opportunities for collaboration and learning from peers. Ultimately, the debate surrounding the role of self-reliance in software engineering highlights the importance of balancing individualism with teamwork and openness to new ideas. As such, successful software engineers must possess both qualities, leveraging their independence to drive innovation while also recognizing the value of working collaboratively with colleagues.\n"
      ]
     }
    ],
@@ -303,27 +417,30 @@
     "essays = []\n",
     "\n",
     "for i,row in test_df.iterrows():\n",
-    "    input_text = f\"Write an essay on the topic {row['topic']}\"\n",
-    "    output_text = mistral_response(input_text)\n",
+    "    instructions = instructions\n",
+    "    topic = {row['topic']}\n",
+    "    systems = f\"{topic} </s>\"\n",
+    "    input_text = f\"{instructions} {systems}\"\n",
+    "    output_text = generate_response(input_text)\n",
     "    essays.append(output_text)"
    ]
   },
   {
    "cell_type": "code",
-   "execution_count": 7,
-   "id": "44550bb2",
+   "execution_count": 8,
+   "id": "19f242ab",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T07:39:00.346657Z",
-     "iopub.status.busy": "2025-01-23T07:39:00.346305Z",
-     "iopub.status.idle": "2025-01-23T07:39:00.417715Z",
-     "shell.execute_reply": "2025-01-23T07:39:00.416895Z"
+     "iopub.execute_input": "2025-01-29T01:39:57.468102Z",
+     "iopub.status.busy": "2025-01-29T01:39:57.467741Z",
+     "iopub.status.idle": "2025-01-29T01:39:57.482644Z",
+     "shell.execute_reply": "2025-01-29T01:39:57.481647Z"
     },
     "papermill": {
-     "duration": 0.079474,
-     "end_time": "2025-01-23T07:39:00.420832",
+     "duration": 0.020835,
+     "end_time": "2025-01-29T01:39:57.484158",
      "exception": false,
-     "start_time": "2025-01-23T07:39:00.341358",
+     "start_time": "2025-01-29T01:39:57.463323",
      "status": "completed"
     },
     "tags": []
@@ -358,17 +475,17 @@
        "    <tr>\n",
        "      <th>0</th>\n",
        "      <td>1097671</td>\n",
-       "      <td>Self-reliance and adaptability are two essential qualities in healthcare. While self-reliance refers to an individual's ability to take care of their health needs independently, adaptability refers to the ability to adjust to changes in healthcare systems, technologies, and treatments. Both qualities are crucial in ensuring that individuals receive the best possible care.\\n\\nSelf-reliance is important in healthcare because it empowers individuals to take control of their health. By being self-reliant, individuals can make informed decisions about their health, such as when to seek medical attention, what treatments to pursue, and how to manage their conditions. This can lead to better health outcomes and a greater sense of control over one's life.\\n\\nOn the other hand, adaptability is important in healthcare because it allows healthcare providers to respond to changes in the healthcare system. With the rapid advancements in technology and medicine, healthcare providers must be able to adapt to new treatments, technologies, and protocols. This requires a flexible and adaptable mindset, as well as the ability to learn and incorporate new</td>\n",
+       "      <td>reliance and adaptability are two essential qualities for individuals to thrive in any aspect of life, including healthcare. While self-reliance emphasizes an individual's ability to take charge of their health, adaptability highlights one's capacity to adjust to changing circumstances. Both traits have unique significance in healthcare, but they can also create tension when viewed through different lenses.\\r\\n\\r\\nOn one hand, self-reliance promotes personal responsibility and autonomy, which are critical components of patient care. Patients who take control of their health outcomes tend to experience better outcomes than those who rely solely on medical professionals. Self-reliant patients often seek out information about their condition, engage with their doctors, and follow treatment plans diligently. This level of engagement can help reduce healthcare costs and improve overall quality of life.\\r\\n\\r\\nHowever, excessive reliance on oneself can sometimes hinder progress. For example, patients may overlook symptoms or fail to adhere to prescribed medication if they believe they can manage their condition without professional intervention. In such cases, adaptability becomes crucial. Adaptable patients recognize when they need assistance and are willing to seek help from medical professionals. They</td>\n",
        "    </tr>\n",
        "    <tr>\n",
        "      <th>1</th>\n",
        "      <td>1726150</td>\n",
-       "      <td>Management consulting has been a popular tool for organizations seeking to address conflicts within marketing. The effectiveness of management consulting in this area can be evaluated by examining its ability to identify and resolve conflicts, improve communication and collaboration, and enhance overall marketing performance.\\n\\nOne of the key benefits of management consulting is its ability to identify and resolve conflicts within marketing. Management consultants are trained to identify potential conflicts and work with marketing teams to develop strategies to address them. This can involve facilitating communication and collaboration between team members, identifying areas of disagreement, and developing solutions that meet the needs of all parties involved.\\n\\nIn addition to resolving conflicts, management consulting can also improve communication and collaboration within marketing teams. By bringing in an outside perspective, management consultants can help to break down silos and encourage team members to work together more effectively. This can involve facilitating team-building activities, providing training on effective communication and collaboration skills, and helping to establish clear roles and responsibilities within the team.\\n\\nFinally, management consulting can enhance overall marketing performance by helping organizations to develop and implement effective marketing strategies. Management consultants can provide</td>\n",
+       "      <td>ement consulting has been widely used in various industries for decades. However, its effectiveness in resolving conflicts within marketing remains debatable. On one hand, consultants can bring fresh perspectives and innovative solutions to complex problems. They can also help companies identify their strengths and weaknesses, which can aid them in making informed decisions. Additionally, they have access to extensive knowledge and expertise in marketing strategies, which can provide valuable insights into how to resolve conflicts effectively. On the other hand, consultants may not always understand the nuances of marketing conflicts, leading to misguided recommendations. Moreover, their lack of familiarity with the company's culture and history can hinder their ability to develop effective solutions. Ultimately, the effectiveness of management consulting in addressing conflicts within marketing depends on several factors, including the consultant's experience, approach, and understanding of the industry. Therefore, it is crucial to carefully evaluate these factors before engaging a consultant to address conflicts within marketing.</td>\n",
        "    </tr>\n",
        "    <tr>\n",
        "      <th>2</th>\n",
        "      <td>3211968</td>\n",
-       "      <td>Self-reliance is a crucial trait for achieving success in software engineering. It refers to the ability of an individual to rely on their own skills, knowledge, and resources to accomplish a task or achieve a goal. In the field of software engineering, self-reliance is essential for several reasons.\\n\\nFirstly, software engineering is a complex and dynamic field that requires constant learning and adaptation. New technologies, programming languages, and tools are constantly emerging, and it is the responsibility of software engineers to keep up with these changes. Self-reliance allows software engineers to take the initiative to learn new skills and stay up-to-date with the latest developments in their field. This not only helps them to remain competitive but also enables them to contribute more effectively to their teams and organizations.\\n\\nSecondly, software engineering projects often require individuals to work independently or in small teams. Self-reliance allows software engineers to take ownership of their work and manage their own tasks effectively. This includes setting goals, prioritizing tasks, and managing deadlines. Self-reliant software engineers are</td>\n",
+       "      <td>reliance has been widely recognized as an essential trait for individuals seeking success in any field, including software engineering. However, this notion can be interpreted differently depending on one's perspective. Some may argue that self-reliance is crucial for innovation and creativity, allowing developers to think outside the box and come up with unique solutions to complex problems. On the other hand, others may contend that relying too much on oneself can hinder progress, leading to missed opportunities for collaboration and learning from peers. Ultimately, the debate surrounding the role of self-reliance in software engineering highlights the importance of balancing individualism with teamwork and openness to new ideas. As such, successful software engineers must possess both qualities, leveraging their independence to drive innovation while also recognizing the value of working collaboratively with colleagues.</td>\n",
        "    </tr>\n",
        "  </tbody>\n",
        "</table>\n",
@@ -380,13 +497,13 @@
        "1  1726150   \n",
        "2  3211968   \n",
        "\n",
-       "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            essay  \n",
-       "0                                                                                                                                                                                                                                                                                                               Self-reliance and adaptability are two essential qualities in healthcare. While self-reliance refers to an individual's ability to take care of their health needs independently, adaptability refers to the ability to adjust to changes in healthcare systems, technologies, and treatments. Both qualities are crucial in ensuring that individuals receive the best possible care.\\n\\nSelf-reliance is important in healthcare because it empowers individuals to take control of their health. By being self-reliant, individuals can make informed decisions about their health, such as when to seek medical attention, what treatments to pursue, and how to manage their conditions. This can lead to better health outcomes and a greater sense of control over one's life.\\n\\nOn the other hand, adaptability is important in healthcare because it allows healthcare providers to respond to changes in the healthcare system. With the rapid advancements in technology and medicine, healthcare providers must be able to adapt to new treatments, technologies, and protocols. This requires a flexible and adaptable mindset, as well as the ability to learn and incorporate new  \n",
-       "1  Management consulting has been a popular tool for organizations seeking to address conflicts within marketing. The effectiveness of management consulting in this area can be evaluated by examining its ability to identify and resolve conflicts, improve communication and collaboration, and enhance overall marketing performance.\\n\\nOne of the key benefits of management consulting is its ability to identify and resolve conflicts within marketing. Management consultants are trained to identify potential conflicts and work with marketing teams to develop strategies to address them. This can involve facilitating communication and collaboration between team members, identifying areas of disagreement, and developing solutions that meet the needs of all parties involved.\\n\\nIn addition to resolving conflicts, management consulting can also improve communication and collaboration within marketing teams. By bringing in an outside perspective, management consultants can help to break down silos and encourage team members to work together more effectively. This can involve facilitating team-building activities, providing training on effective communication and collaboration skills, and helping to establish clear roles and responsibilities within the team.\\n\\nFinally, management consulting can enhance overall marketing performance by helping organizations to develop and implement effective marketing strategies. Management consultants can provide  \n",
-       "2                                                                                                                                                                                                                                                                                Self-reliance is a crucial trait for achieving success in software engineering. It refers to the ability of an individual to rely on their own skills, knowledge, and resources to accomplish a task or achieve a goal. In the field of software engineering, self-reliance is essential for several reasons.\\n\\nFirstly, software engineering is a complex and dynamic field that requires constant learning and adaptation. New technologies, programming languages, and tools are constantly emerging, and it is the responsibility of software engineers to keep up with these changes. Self-reliance allows software engineers to take the initiative to learn new skills and stay up-to-date with the latest developments in their field. This not only helps them to remain competitive but also enables them to contribute more effectively to their teams and organizations.\\n\\nSecondly, software engineering projects often require individuals to work independently or in small teams. Self-reliance allows software engineers to take ownership of their work and manage their own tasks effectively. This includes setting goals, prioritizing tasks, and managing deadlines. Self-reliant software engineers are  "
+       "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     essay  \n",
+       "0  reliance and adaptability are two essential qualities for individuals to thrive in any aspect of life, including healthcare. While self-reliance emphasizes an individual's ability to take charge of their health, adaptability highlights one's capacity to adjust to changing circumstances. Both traits have unique significance in healthcare, but they can also create tension when viewed through different lenses.\\r\\n\\r\\nOn one hand, self-reliance promotes personal responsibility and autonomy, which are critical components of patient care. Patients who take control of their health outcomes tend to experience better outcomes than those who rely solely on medical professionals. Self-reliant patients often seek out information about their condition, engage with their doctors, and follow treatment plans diligently. This level of engagement can help reduce healthcare costs and improve overall quality of life.\\r\\n\\r\\nHowever, excessive reliance on oneself can sometimes hinder progress. For example, patients may overlook symptoms or fail to adhere to prescribed medication if they believe they can manage their condition without professional intervention. In such cases, adaptability becomes crucial. Adaptable patients recognize when they need assistance and are willing to seek help from medical professionals. They  \n",
+       "1                                                                                                                                                                            ement consulting has been widely used in various industries for decades. However, its effectiveness in resolving conflicts within marketing remains debatable. On one hand, consultants can bring fresh perspectives and innovative solutions to complex problems. They can also help companies identify their strengths and weaknesses, which can aid them in making informed decisions. Additionally, they have access to extensive knowledge and expertise in marketing strategies, which can provide valuable insights into how to resolve conflicts effectively. On the other hand, consultants may not always understand the nuances of marketing conflicts, leading to misguided recommendations. Moreover, their lack of familiarity with the company's culture and history can hinder their ability to develop effective solutions. Ultimately, the effectiveness of management consulting in addressing conflicts within marketing depends on several factors, including the consultant's experience, approach, and understanding of the industry. Therefore, it is crucial to carefully evaluate these factors before engaging a consultant to address conflicts within marketing.  \n",
+       "2                                                                                                                                                                                                                                                                                                                                                                                                 reliance has been widely recognized as an essential trait for individuals seeking success in any field, including software engineering. However, this notion can be interpreted differently depending on one's perspective. Some may argue that self-reliance is crucial for innovation and creativity, allowing developers to think outside the box and come up with unique solutions to complex problems. On the other hand, others may contend that relying too much on oneself can hinder progress, leading to missed opportunities for collaboration and learning from peers. Ultimately, the debate surrounding the role of self-reliance in software engineering highlights the importance of balancing individualism with teamwork and openness to new ideas. As such, successful software engineers must possess both qualities, leveraging their independence to drive innovation while also recognizing the value of working collaboratively with colleagues.  "
       ]
      },
-     "execution_count": 7,
+     "execution_count": 8,
      "metadata": {},
      "output_type": "execute_result"
     }
@@ -398,20 +515,20 @@
   },
   {
    "cell_type": "code",
-   "execution_count": 8,
-   "id": "82e12abc",
+   "execution_count": 9,
+   "id": "60f38240",
    "metadata": {
     "execution": {
-     "iopub.execute_input": "2025-01-23T07:39:00.430316Z",
-     "iopub.status.busy": "2025-01-23T07:39:00.429997Z",
-     "iopub.status.idle": "2025-01-23T07:39:00.447938Z",
-     "shell.execute_reply": "2025-01-23T07:39:00.446906Z"
+     "iopub.execute_input": "2025-01-29T01:39:57.493409Z",
+     "iopub.status.busy": "2025-01-29T01:39:57.493119Z",
+     "iopub.status.idle": "2025-01-29T01:39:57.502408Z",
+     "shell.execute_reply": "2025-01-29T01:39:57.501714Z"
     },
     "papermill": {
-     "duration": 0.024903,
-     "end_time": "2025-01-23T07:39:00.449720",
+     "duration": 0.014988,
+     "end_time": "2025-01-29T01:39:57.503655",
      "exception": false,
-     "start_time": "2025-01-23T07:39:00.424817",
+     "start_time": "2025-01-29T01:39:57.488667",
      "status": "completed"
     },
     "tags": []
@@ -424,30 +541,13 @@
   {
    "cell_type": "code",
    "execution_count": null,
-   "id": "e6d7acc1",
+   "id": "11e5ab8b",
    "metadata": {
     "papermill": {
-     "duration": 0.003333,
-     "end_time": "2025-01-23T07:39:00.457015",
+     "duration": 0.003484,
+     "end_time": "2025-01-29T01:39:57.511248",
      "exception": false,
-     "start_time": "2025-01-23T07:39:00.453682",
-     "status": "completed"
-    },
-    "tags": []
-   },
-   "outputs": [],
-   "source": []
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "id": "294db9b2",
-   "metadata": {
-    "papermill": {
-     "duration": 0.003228,
-     "end_time": "2025-01-23T07:39:00.463789",
-     "exception": false,
-     "start_time": "2025-01-23T07:39:00.460561",
+     "start_time": "2025-01-29T01:39:57.507764",
      "status": "completed"
     },
     "tags": []
@@ -458,7 +558,7 @@
  ],
  "metadata": {
   "kaggle": {
-   "accelerator": "none",
+   "accelerator": "gpu",
    "dataSources": [
     {
      "databundleVersionId": 10369658,
@@ -478,7 +578,7 @@
     }
    ],
    "dockerImageVersionId": 30839,
-   "isGpuEnabled": false,
+   "isGpuEnabled": true,
    "isInternetEnabled": false,
    "language": "python",
    "sourceType": "notebook"
@@ -502,20 +602,144 @@
   },
   "papermill": {
    "default_parameters": {},
-   "duration": 6840.394355,
-   "end_time": "2025-01-23T07:39:03.231172",
+   "duration": 146.871282,
+   "end_time": "2025-01-29T01:40:01.214831",
    "environment_variables": {},
    "exception": null,
    "input_path": "__notebook__.ipynb",
    "output_path": "__notebook__.ipynb",
    "parameters": {},
-   "start_time": "2025-01-23T05:45:02.836817",
+   "start_time": "2025-01-29T01:37:34.343549",
    "version": "2.6.0"
   },
   "widgets": {
    "application/vnd.jupyter.widget-state+json": {
     "state": {
-     "1cbecf9bf28542778dd7a0fb359be48a": {
+     "036bde54c6644688903a0a62e9249168": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLStyleModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLStyleModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
+      }
+     },
+     "20bcf10383804894af51a5b91ba37b44": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "2f1c449918014598a9cb107f16aa35cf": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "3075570af9344b53869cdb94e3012105": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "ProgressStyleModel",
@@ -531,113 +755,25 @@
        "description_width": ""
       }
      },
-     "40ac196465ba466ea05c1f72e56bb67d": {
-      "model_module": "@jupyter-widgets/base",
+     "64bfd4cc626c4d9db4f49589e585867d": {
+      "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
+      "model_name": "HTMLStyleModel",
       "state": {
-       "_model_module": "@jupyter-widgets/base",
+       "_model_module": "@jupyter-widgets/controls",
        "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
+       "_model_name": "HTMLStyleModel",
        "_view_count": null,
        "_view_module": "@jupyter-widgets/base",
        "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
+       "_view_name": "StyleView",
+       "background": null,
+       "description_width": "",
+       "font_size": null,
+       "text_color": null
       }
      },
-     "703c8ded07b74390b5be3022101f717c": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "9094e730e4f9419188968de2cc7304a5": {
+     "ae8e97a20e6549f6a03dd8b1c10683f0": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "HBoxModel",
@@ -652,16 +788,115 @@
        "_view_name": "HBoxView",
        "box_style": "",
        "children": [
-        "IPY_MODEL_df883742825d4f6aa506ec7894ef1f3f",
-        "IPY_MODEL_aa962f2b02fb4fd8b37dd9dc13df5205",
-        "IPY_MODEL_d33d9890a06f4725923628b24594a87e"
+        "IPY_MODEL_b899a77d434f4c80995c211dccd11346",
+        "IPY_MODEL_e18d9a795c654ddea2184218b419f6bd",
+        "IPY_MODEL_cf0a110b5d204b03a52bd50a7219d0f7"
        ],
-       "layout": "IPY_MODEL_e2bbcafbff94445084aa61ccfbfae32c",
+       "layout": "IPY_MODEL_b6bb20d3aaf2440fbedb5b1fed51c77c",
        "tabbable": null,
        "tooltip": null
       }
      },
-     "aa962f2b02fb4fd8b37dd9dc13df5205": {
+     "b6bb20d3aaf2440fbedb5b1fed51c77c": {
+      "model_module": "@jupyter-widgets/base",
+      "model_module_version": "2.0.0",
+      "model_name": "LayoutModel",
+      "state": {
+       "_model_module": "@jupyter-widgets/base",
+       "_model_module_version": "2.0.0",
+       "_model_name": "LayoutModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/base",
+       "_view_module_version": "2.0.0",
+       "_view_name": "LayoutView",
+       "align_content": null,
+       "align_items": null,
+       "align_self": null,
+       "border_bottom": null,
+       "border_left": null,
+       "border_right": null,
+       "border_top": null,
+       "bottom": null,
+       "display": null,
+       "flex": null,
+       "flex_flow": null,
+       "grid_area": null,
+       "grid_auto_columns": null,
+       "grid_auto_flow": null,
+       "grid_auto_rows": null,
+       "grid_column": null,
+       "grid_gap": null,
+       "grid_row": null,
+       "grid_template_areas": null,
+       "grid_template_columns": null,
+       "grid_template_rows": null,
+       "height": null,
+       "justify_content": null,
+       "justify_items": null,
+       "left": null,
+       "margin": null,
+       "max_height": null,
+       "max_width": null,
+       "min_height": null,
+       "min_width": null,
+       "object_fit": null,
+       "object_position": null,
+       "order": null,
+       "overflow": null,
+       "padding": null,
+       "right": null,
+       "top": null,
+       "visibility": null,
+       "width": null
+      }
+     },
+     "b899a77d434f4c80995c211dccd11346": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_20bcf10383804894af51a5b91ba37b44",
+       "placeholder": "​",
+       "style": "IPY_MODEL_036bde54c6644688903a0a62e9249168",
+       "tabbable": null,
+       "tooltip": null,
+       "value": "Loading checkpoint shards: 100%"
+      }
+     },
+     "cf0a110b5d204b03a52bd50a7219d0f7": {
+      "model_module": "@jupyter-widgets/controls",
+      "model_module_version": "2.0.0",
+      "model_name": "HTMLModel",
+      "state": {
+       "_dom_classes": [],
+       "_model_module": "@jupyter-widgets/controls",
+       "_model_module_version": "2.0.0",
+       "_model_name": "HTMLModel",
+       "_view_count": null,
+       "_view_module": "@jupyter-widgets/controls",
+       "_view_module_version": "2.0.0",
+       "_view_name": "HTMLView",
+       "description": "",
+       "description_allow_html": false,
+       "layout": "IPY_MODEL_2f1c449918014598a9cb107f16aa35cf",
+       "placeholder": "​",
+       "style": "IPY_MODEL_64bfd4cc626c4d9db4f49589e585867d",
+       "tabbable": null,
+       "tooltip": null,
+       "value": " 2/2 [01:08&lt;00:00, 31.91s/it]"
+      }
+     },
+     "e18d9a795c654ddea2184218b419f6bd": {
       "model_module": "@jupyter-widgets/controls",
       "model_module_version": "2.0.0",
       "model_name": "FloatProgressModel",
@@ -677,152 +912,17 @@
        "bar_style": "success",
        "description": "",
        "description_allow_html": false,
-       "layout": "IPY_MODEL_dd5d4ea77ae4498bbb943502a8a423a8",
+       "layout": "IPY_MODEL_e1a2badbc2ce4c1495a45cc54ef768f8",
        "max": 2.0,
        "min": 0.0,
        "orientation": "horizontal",
-       "style": "IPY_MODEL_1cbecf9bf28542778dd7a0fb359be48a",
+       "style": "IPY_MODEL_3075570af9344b53869cdb94e3012105",
        "tabbable": null,
        "tooltip": null,
        "value": 2.0
       }
      },
-     "d2ddb02560014e038f438b1f434abcd8": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLStyleModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLStyleModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "StyleView",
-       "background": null,
-       "description_width": "",
-       "font_size": null,
-       "text_color": null
-      }
-     },
-     "d33d9890a06f4725923628b24594a87e": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLModel",
-      "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
-       "_view_module_version": "2.0.0",
-       "_view_name": "HTMLView",
-       "description": "",
-       "description_allow_html": false,
-       "layout": "IPY_MODEL_703c8ded07b74390b5be3022101f717c",
-       "placeholder": "​",
-       "style": "IPY_MODEL_d739a9410e7e47aea8aff746733c74bd",
-       "tabbable": null,
-       "tooltip": null,
-       "value": " 2/2 [00:04&lt;00:00,  2.13s/it]"
-      }
-     },
-     "d739a9410e7e47aea8aff746733c74bd": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLStyleModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLStyleModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "StyleView",
-       "background": null,
-       "description_width": "",
-       "font_size": null,
-       "text_color": null
-      }
-     },
-     "dd5d4ea77ae4498bbb943502a8a423a8": {
-      "model_module": "@jupyter-widgets/base",
-      "model_module_version": "2.0.0",
-      "model_name": "LayoutModel",
-      "state": {
-       "_model_module": "@jupyter-widgets/base",
-       "_model_module_version": "2.0.0",
-       "_model_name": "LayoutModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/base",
-       "_view_module_version": "2.0.0",
-       "_view_name": "LayoutView",
-       "align_content": null,
-       "align_items": null,
-       "align_self": null,
-       "border_bottom": null,
-       "border_left": null,
-       "border_right": null,
-       "border_top": null,
-       "bottom": null,
-       "display": null,
-       "flex": null,
-       "flex_flow": null,
-       "grid_area": null,
-       "grid_auto_columns": null,
-       "grid_auto_flow": null,
-       "grid_auto_rows": null,
-       "grid_column": null,
-       "grid_gap": null,
-       "grid_row": null,
-       "grid_template_areas": null,
-       "grid_template_columns": null,
-       "grid_template_rows": null,
-       "height": null,
-       "justify_content": null,
-       "justify_items": null,
-       "left": null,
-       "margin": null,
-       "max_height": null,
-       "max_width": null,
-       "min_height": null,
-       "min_width": null,
-       "object_fit": null,
-       "object_position": null,
-       "order": null,
-       "overflow": null,
-       "padding": null,
-       "right": null,
-       "top": null,
-       "visibility": null,
-       "width": null
-      }
-     },
-     "df883742825d4f6aa506ec7894ef1f3f": {
-      "model_module": "@jupyter-widgets/controls",
-      "model_module_version": "2.0.0",
-      "model_name": "HTMLModel",
-      "state": {
-       "_dom_classes": [],
-       "_model_module": "@jupyter-widgets/controls",
-       "_model_module_version": "2.0.0",
-       "_model_name": "HTMLModel",
-       "_view_count": null,
-       "_view_module": "@jupyter-widgets/controls",
-       "_view_module_version": "2.0.0",
-       "_view_name": "HTMLView",
-       "description": "",
-       "description_allow_html": false,
-       "layout": "IPY_MODEL_40ac196465ba466ea05c1f72e56bb67d",
-       "placeholder": "​",
-       "style": "IPY_MODEL_d2ddb02560014e038f438b1f434abcd8",
-       "tabbable": null,
-       "tooltip": null,
-       "value": "Loading checkpoint shards: 100%"
-      }
-     },
-     "e2bbcafbff94445084aa61ccfbfae32c": {
+     "e1a2badbc2ce4c1495a45cc54ef768f8": {
       "model_module": "@jupyter-widgets/base",
       "model_module_version": "2.0.0",
       "model_name": "LayoutModel",
